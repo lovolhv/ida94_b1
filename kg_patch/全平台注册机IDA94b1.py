@@ -51,7 +51,7 @@ def build_license():
     license = {
         "header": {"version": 1},
         "payload": {
-            "name": "来自：恒烈 EternalBlaze （若闲鱼买的请退款！）",
+            "name": "yigod",
             "email": "Henglie@vip.qq.com",
             "licenses": [
                 {
@@ -64,7 +64,7 @@ def build_license():
                     "start_date": "2024-08-10 00:00:00",
                     "end_date": "2099-12-31 23:59:59",
                     "issued_on": "2025-07-20 00:00:00",
-                    "owner": "来自：恒烈 EternalBlaze （若闲鱼买的请退款！）",
+                    "owner": "yigod",
                     "product_id": "IDAPRO",
                     "product_version": "9.4",
                     "add_ons": [],
