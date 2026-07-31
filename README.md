@@ -110,3 +110,37 @@ codesign --force --sign - --timestamp=none "$MACOS/libida32.dylib"
 ```
 
 更多参数和特征校验逻辑参见 [`kg_patch/README`](kg_patch/README)。
+
+## 教程三：单独使用许可证生成器
+
+`kg_patch/全平台注册机IDA94b1.py` 是未混淆的 Python 源码，只负责在**当前工作目录**生成 `idapro.hexlic`，不会修改任何二进制文件。
+
+当前默认许可证信息为：
+
+```text
+name : yigod
+owner: yigod
+email: oneyigod@gmail.com
+```
+
+在 `kg_patch` 目录执行：
+
+```zsh
+cd ~/Downloads/kg_patch
+python3 全平台注册机IDA94b1.py
+```
+
+成功后会在当前目录写入 `idapro.hexlic` 并打印签名。该脚本固定写入当前目录；若要直接生成到已安装的 IDA 目录，使用：
+
+```zsh
+cd "/Applications/IDA Professional 9.4.app/Contents/MacOS"
+python3 ~/Downloads/kg_patch/全平台注册机IDA94b1.py
+```
+
+如果该目录已有许可证，先保留备份：
+
+```zsh
+cd "/Applications/IDA Professional 9.4.app/Contents/MacOS"
+cp idapro.hexlic idapro.hexlic.bak
+python3 ~/Downloads/kg_patch/全平台注册机IDA94b1.py
+```

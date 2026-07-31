@@ -52,7 +52,7 @@ def build_license():
         "header": {"version": 1},
         "payload": {
             "name": "yigod",
-            "email": "Henglie@vip.qq.com",
+            "email": "oneyigod@gmail.com",
             "licenses": [
                 {
                     "description": "license",
