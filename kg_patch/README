@@ -1,0 +1,73 @@
+# IDA 9.4 macOS ARM64 patch 包
+
+`patch_ida94_armmac.py` 是针对已分析并验证过的 **IDA 9.4 Apple Silicon**
+`libida.dylib`、`libida32.dylib` 的处理脚本。
+
+它按特征定位每个库中的两处 128 字节许可公钥常量；只有两个库都精确命中时才会写入，避免把补丁套到其他 IDA 版本或 x86 文件上。
+
+## 文件说明
+
+- `patch_ida94_armmac.py`：macOS ARM64 主处理脚本，默认只检查、不改文件。
+- `全平台注册机IDA94b1.py`：原有许可证生成器。
+- `idapro.hexlic`：包内许可证样本。
+- `x64win/`、`x64linux/`：用于对比确认的原始 x64 补丁样本；主脚本不会修改或使用它们。
+
+## 推荐：在 Mac 上直接处理已安装的 App
+
+先把整个 `kg_patch` 目录复制到 Mac，例如 `~/Downloads/kg_patch`。然后运行：
+
+```zsh
+cd ~/Downloads/kg_patch
+python3 patch_ida94_armmac.py \
+  --app "/Applications/IDA Professional 9.4.app" \
+  --in-place --apply --generate-license --sign
+```
+
+此命令会：
+
+1. 处理 `Contents/MacOS/libida.dylib` 与 `libida32.dylib`；
+2. 在首次写入前各创建一个 `.bak` 备份；
+3. 在 `Contents/MacOS/` 生成 `idapro.hexlic`；
+4. 仅对两个被改动的 dylib 重新进行 ad-hoc 签名。
+
+不要对整个 App 使用 `codesign --deep`：文档目录中有 `.md.in` 文件，会导致递归签名报 `bundle format unrecognized`。只签两个 dylib 即可。
+
+若下载来源有隔离属性，可执行：
+
+```zsh
+xattr -dr com.apple.quarantine "/Applications/IDA Professional 9.4.app"
+```
+
+## 先输出到独立目录（默认安全方式）
+
+```zsh
+python3 patch_ida94_armmac.py \
+  --input-dir "/Applications/IDA Professional 9.4.app/Contents/MacOS" \
+  --out-dir ./mac_arm_patched --apply --generate-license
+```
+
+生成的三个文件位于 `./mac_arm_patched/`。将它们替换回 App 的 `Contents/MacOS/` 后，再执行：
+
+```zsh
+codesign --force --sign - --timestamp=none \
+  "/Applications/IDA Professional 9.4.app/Contents/MacOS/libida.dylib"
+codesign --force --sign - --timestamp=none \
+  "/Applications/IDA Professional 9.4.app/Contents/MacOS/libida32.dylib"
+```
+
+## 其他选项
+
+```zsh
+# 仅检查，不写入（默认行为）
+python3 patch_ida94_armmac.py --app "/Applications/IDA Professional 9.4.app"
+
+# 使用包内的现有 idapro.hexlic，而不是重新生成
+python3 patch_ida94_armmac.py --app "/Applications/IDA Professional 9.4.app" \
+  --in-place --apply --use-bundled-license --sign
+
+# 指定一个现有许可证
+python3 patch_ida94_armmac.py --app "/Applications/IDA Professional 9.4.app" \
+  --in-place --apply --license ~/Downloads/idapro.hexlic --sign
+```
+
+脚本会拒绝以下情况：非 ARM64 Mach-O、找不到目标库、原始常量命中数不为 2、已混入其他补丁的库。新版 IDA 不应直接复用本脚本；应先重新核对字节特征与运行行为。

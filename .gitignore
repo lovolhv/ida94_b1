@@ -1,0 +1,12 @@
+# Generated local files
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Large setup packages are published as the v9.4-installers GitHub Release assets.
+/ida-pro_94_armlinux.run
+/ida-pro_94_armmac.app.zip
+/ida-pro_94_armwin.exe
+/ida-pro_94_x64linux.run
+/ida-pro_94_x64mac.app.zip
+/ida-pro_94_x64win.exe
