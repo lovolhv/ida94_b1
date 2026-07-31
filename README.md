@@ -1,26 +1,124 @@
-# ida94_b1
+# IDA 9.4 全平台包
 
-IDA 9.4 analysis and patch package.
+这里放的是 IDA 9.4 的全平台安装包、补丁文件和许可证生成脚本。
 
-## Repository contents
+安装包在 [v9.4-installers](https://github.com/Yigods/ida94_b1/releases/tag/v9.4-installers) Release。补丁和脚本在仓库的 `kg_patch/` 目录。
 
-- [`kg_patch/`](kg_patch/README): macOS ARM64 patch helper, license material, and x64 comparison samples.
-- [`misc/`](misc/): auxiliary 9.4 artifacts.
-- `SHA256SUMS`: hashes for every archived artifact and repository file.
+## 目录说明
 
-The six IDA installer packages exceed GitHub's 100 MiB Git-file limit. They are preserved as assets of the private GitHub Release **`v9.4-installers`**, rather than being omitted.
+| 路径 | 内容 |
+| --- | --- |
+| `ida-pro_94_x64win.exe` | Windows x64 安装包（Release） |
+| `ida-pro_94_armwin.exe` | Windows ARM 安装包（Release） |
+| `ida-pro_94_x64linux.run` | Linux x64 安装包（Release） |
+| `ida-pro_94_armlinux.run` | Linux ARM 安装包（Release） |
+| `ida-pro_94_x64mac.app.zip` | macOS Intel 安装包（Release） |
+| `ida-pro_94_armmac.app.zip` | macOS Apple Silicon 安装包（Release） |
+| `kg_patch/x64win/` | Windows x64：`ida.dll`、`ida32.dll` |
+| `kg_patch/x64linux/` | Linux x64：`libida.so`、`libida32.so` |
+| `kg_patch/patch_ida94_armmac.py` | macOS ARM64 处理脚本 |
+| `kg_patch/全平台注册机IDA94b1.py` | 许可证生成脚本，生成 `idapro.hexlic` |
+| `misc/` | 其他 9.4 组件 |
+| `SHA256SUMS` | 文件哈希 |
 
-## 使用前提
+当前已整理并验证的补丁对应关系：
 
-- 目标为 **IDA Professional 9.4 Apple Silicon（ARM64）**；脚本会拒绝 x86 或不匹配的版本。
-- macOS 需要自带的 `python3` 与 `codesign`。
-- 请保留原始安装包或 `.bak` 备份，以便回退。
+| 平台 | 可用处理方式 |
+| --- | --- |
+| Windows x64 | 替换 `ida.dll`、`ida32.dll` |
+| Linux x64 | 替换 `libida.so`、`libida32.so` |
+| macOS ARM64 | 使用 `patch_ida94_armmac.py` |
+| Windows ARM、Linux ARM、macOS x64 | 只有安装包，未放对应补丁 |
 
-> 不要对整个 App 使用 `codesign --deep`。App 内文档目录含有 `.md.in` 文件，递归签名会出现 `bundle format unrecognized`；本项目只重签被修改的两个 dylib。
+不要把 x64 的 DLL/SO 替换到 ARM 版本，也不要把 9.4 的文件用于其他 IDA 版本。
 
-## 教程一：macOS ARM64 一键原地处理（推荐）
+## 先生成许可证
 
-适合已把 IDA 9.4 安装到默认路径的情况。先下载仓库或仅复制其中的 `kg_patch` 目录到 Mac，例如 `~/Downloads/kg_patch`。
+`全平台注册机IDA94b1.py` 只生成 `idapro.hexlic`，不修改 DLL、SO 或 dylib。它固定把文件写到当前目录。
+
+默认信息：
+
+```text
+name : yigod
+owner: yigod
+email: oneyigod@gmail.com
+```
+
+在 IDA 安装目录里生成：
+
+```bash
+cd "IDA安装目录"
+python3 /你的路径/kg_patch/全平台注册机IDA94b1.py
+```
+
+如果安装目录已经有许可证，先备份：
+
+```bash
+cp idapro.hexlic idapro.hexlic.bak
+python3 /你的路径/kg_patch/全平台注册机IDA94b1.py
+```
+
+Windows 没有 Python 时，可以在任意有 Python 的机器上运行脚本，再把生成的 `idapro.hexlic` 复制到 IDA 安装目录。
+
+## Windows x64：替换 DLL
+
+下面以默认安装目录为例。先退出 IDA，并用 PowerShell **管理员身份**运行：
+
+```powershell
+$IDA = "C:\Program Files\IDA Professional 9.4"
+$PATCH = "C:\Users\你的用户名\Downloads\ida94_b1\kg_patch\x64win"
+
+Copy-Item "$IDA\ida.dll" "$IDA\ida.dll.bak"
+Copy-Item "$IDA\ida32.dll" "$IDA\ida32.dll.bak"
+
+Copy-Item "$PATCH\ida.dll" "$IDA\ida.dll" -Force
+Copy-Item "$PATCH\ida32.dll" "$IDA\ida32.dll" -Force
+Copy-Item "C:\Users\你的用户名\Downloads\idapro.hexlic" "$IDA\idapro.hexlic" -Force
+```
+
+如果在 IDA 安装目录生成许可证，最后一条可以省略。安装目录不是默认位置时，改 `$IDA` 即可。
+
+恢复原始 DLL：
+
+```powershell
+Copy-Item "$IDA\ida.dll.bak" "$IDA\ida.dll" -Force
+Copy-Item "$IDA\ida32.dll.bak" "$IDA\ida32.dll" -Force
+```
+
+## Linux x64：替换 SO
+
+假设 IDA 安装在 `/opt/ida-pro-9.4`。先退出 IDA：
+
+```bash
+IDA=/opt/ida-pro-9.4
+PATCH=/你的路径/ida94_b1/kg_patch/x64linux
+
+cp "$IDA/libida.so" "$IDA/libida.so.bak"
+cp "$IDA/libida32.so" "$IDA/libida32.so.bak"
+
+cp "$PATCH/libida.so" "$IDA/libida.so"
+cp "$PATCH/libida32.so" "$IDA/libida32.so"
+
+cd "$IDA"
+python3 /你的路径/ida94_b1/kg_patch/全平台注册机IDA94b1.py
+```
+
+没有写权限时，在命令前加 `sudo`。恢复：
+
+```bash
+cp "$IDA/libida.so.bak" "$IDA/libida.so"
+cp "$IDA/libida32.so.bak" "$IDA/libida32.so"
+```
+
+## macOS Apple Silicon：脚本处理 dylib
+
+适用于 Apple Silicon 的 IDA 9.4，例如：
+
+```text
+/Applications/IDA Professional 9.4.app
+```
+
+把 `kg_patch` 复制到 Mac 后运行：
 
 ```zsh
 cd ~/Downloads/kg_patch
@@ -30,117 +128,50 @@ python3 patch_ida94_armmac.py \
   --in-place --apply --generate-license --sign
 ```
 
-该命令会依次完成：
+脚本会：
 
-1. 校验 `libida.dylib` 和 `libida32.dylib` 均为匹配的 IDA 9.4 ARM64 文件；
-2. 在原目录创建 `libida.dylib.bak`、`libida32.dylib.bak`；
-3. 修改两个 dylib，并在 `Contents/MacOS/` 生成默认资料为 `yigod` 的 `idapro.hexlic`；
-4. 使用 ad-hoc 签名重新签署两个修改后的 dylib。
+1. 检查 `libida.dylib`、`libida32.dylib` 是否为已验证的 ARM64 9.4 文件；
+2. 备份为 `libida.dylib.bak` 和 `libida32.dylib.bak`；
+3. 修改两个 dylib；
+4. 在 `Contents/MacOS/` 写入 `idapro.hexlic`；
+5. 只重签修改过的 dylib。
 
-如 App 来自浏览器下载，再移除隔离属性并启动：
+如果 App 被 macOS 标记为隔离文件：
 
 ```zsh
 xattr -dr com.apple.quarantine "/Applications/IDA Professional 9.4.app"
-open "/Applications/IDA Professional 9.4.app"
 ```
 
-若需要确认签名状态：
+不要执行 `codesign --deep`。需要手工重签时，只签这两个文件：
 
 ```zsh
-codesign --verify --verbose=2 \
-  "/Applications/IDA Professional 9.4.app/Contents/MacOS/libida.dylib"
-codesign --verify --verbose=2 \
-  "/Applications/IDA Professional 9.4.app/Contents/MacOS/libida32.dylib"
-```
-
-## 教程二：先生成独立输出，再手工替换
-
-适合希望先保存处理结果、检查后才影响已安装 App 的情况。以下命令不会立刻修改 `/Applications` 中的文件。
-
-```zsh
-cd ~/Downloads/kg_patch
-
-python3 patch_ida94_armmac.py \
-  --input-dir "/Applications/IDA Professional 9.4.app/Contents/MacOS" \
-  --out-dir ./mac_arm_patched \
-  --apply --generate-license
-```
-
-检查 `mac_arm_patched/` 中是否包含：
-
-```text
-libida.dylib
-libida32.dylib
-idapro.hexlic
-```
-
-确认后执行替换和签名：
-
-```zsh
-APP="/Applications/IDA Professional 9.4.app"
-MACOS="$APP/Contents/MacOS"
-
-# 手工备份原始文件
-cp "$MACOS/libida.dylib" "$MACOS/libida.dylib.bak"
-cp "$MACOS/libida32.dylib" "$MACOS/libida32.dylib.bak"
-
-# 替换两个 dylib 和许可证
-cp ./mac_arm_patched/libida.dylib "$MACOS/"
-cp ./mac_arm_patched/libida32.dylib "$MACOS/"
-cp ./mac_arm_patched/idapro.hexlic "$MACOS/"
-
-# 仅重签被修改的库
+MACOS="/Applications/IDA Professional 9.4.app/Contents/MacOS"
 codesign --force --sign - --timestamp=none "$MACOS/libida.dylib"
 codesign --force --sign - --timestamp=none "$MACOS/libida32.dylib"
-
-xattr -dr com.apple.quarantine "$APP"
-open "$APP"
 ```
 
-如需恢复，关闭 IDA 后执行：
+恢复 macOS 原文件：
 
 ```zsh
-APP="/Applications/IDA Professional 9.4.app"
-MACOS="$APP/Contents/MacOS"
-
+MACOS="/Applications/IDA Professional 9.4.app/Contents/MacOS"
 cp "$MACOS/libida.dylib.bak" "$MACOS/libida.dylib"
 cp "$MACOS/libida32.dylib.bak" "$MACOS/libida32.dylib"
 codesign --force --sign - --timestamp=none "$MACOS/libida.dylib"
 codesign --force --sign - --timestamp=none "$MACOS/libida32.dylib"
 ```
 
-更多参数和特征校验逻辑参见 [`kg_patch/README`](kg_patch/README)。
+## 检查文件
 
-## 教程三：单独使用许可证生成器
+下载后可校验：
 
-`kg_patch/全平台注册机IDA94b1.py` 是未混淆的 Python 源码，只负责在**当前工作目录**生成 `idapro.hexlic`，不会修改任何二进制文件。
-
-当前默认许可证信息为：
-
-```text
-name : yigod
-owner: yigod
-email: oneyigod@gmail.com
+```bash
+sha256sum -c SHA256SUMS
 ```
 
-在 `kg_patch` 目录执行：
+macOS 使用：
 
 ```zsh
-cd ~/Downloads/kg_patch
-python3 全平台注册机IDA94b1.py
+shasum -a 256 -c SHA256SUMS
 ```
 
-成功后会在当前目录写入 `idapro.hexlic` 并打印签名。该脚本固定写入当前目录；若要直接生成到已安装的 IDA 目录，使用：
-
-```zsh
-cd "/Applications/IDA Professional 9.4.app/Contents/MacOS"
-python3 ~/Downloads/kg_patch/全平台注册机IDA94b1.py
-```
-
-如果该目录已有许可证，先保留备份：
-
-```zsh
-cd "/Applications/IDA Professional 9.4.app/Contents/MacOS"
-cp idapro.hexlic idapro.hexlic.bak
-python3 ~/Downloads/kg_patch/全平台注册机IDA94b1.py
-```
+`SHA256SUMS` 也包含 Release 中的大安装包；把 Release 文件下载到仓库根目录后即可一起校验。
